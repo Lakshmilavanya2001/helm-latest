@@ -83,8 +83,12 @@ data:
                 except Exception as e:
                     logging.error(f"Error checking notifications: {e}")
 
-            # Check if user wants to change profile information
-            profile_change_pattern = r"\b(change|update|modify)\s+.*\b(email|mail\s*id|mail|password|phone|address)\b"
+            # Check if user wants to change profile information. The scan is
+            # lazy (.*?) so the FIRST keyword after the verb wins: in
+            # "change my email address to x@y.com" the type is "email
+            # address" (-> email branch), not "address" — a greedy scan
+            # would misroute compound phrases to the postal-address branch.
+            profile_change_pattern = r"\b(change|update|modify)\s+.*?\b(e-?mail\s*(?:address|id)?|mail\s*(?:address|id)?|password|phone|address)\b"
             is_profile_change = re.search(profile_change_pattern, state.query, re.IGNORECASE)
 
             if is_profile_change:

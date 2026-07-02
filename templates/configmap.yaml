@@ -88,9 +88,9 @@ data:
     ON CONFLICT DO NOTHING;
 
     INSERT INTO insurance.user_policies (user_id, policy_id, role, start_date, end_date) VALUES
-        ('user101','CAR-ABC-2025-000101', 'PRIMARY','2025-04-15','2026-04-14'),
-        ('user202','HLTH-ABC-2025-000202','PRIMARY','2025-01-01','2025-12-31'),
-        ('user303','HOME-ABC-2025-000303','PRIMARY','2025-03-20','2026-03-19')
+        ('user101','CAR-ABC-2025-000101', 'PRIMARY','2025-04-15','2030-04-14'),
+        ('user202','HLTH-ABC-2025-000202','PRIMARY','2025-01-01','2029-12-31'),
+        ('user303','HOME-ABC-2025-000303','PRIMARY','2025-03-20','2030-03-19')
     ON CONFLICT DO NOTHING;
 
     INSERT INTO insurance.claim_events (claim_id, event_type, event_note) VALUES
@@ -125,3 +125,14 @@ data:
         FOREIGN KEY (policy_id) REFERENCES insurance.policies(policy_id);
 
     SELECT pg_catalog.setval('insurance.claim_events_event_id_seq', 8, true);
+
+    -- Keep policy terms current on databases seeded by an older chart
+    -- version: upsert the 5-year terms. Must stay after the constraints
+    -- block — ON CONFLICT (user_id, policy_id) needs the primary key.
+    INSERT INTO insurance.user_policies (user_id, policy_id, role, start_date, end_date) VALUES
+        ('user101','CAR-ABC-2025-000101', 'PRIMARY','2025-04-15','2030-04-14'),
+        ('user202','HLTH-ABC-2025-000202','PRIMARY','2025-01-01','2029-12-31'),
+        ('user303','HOME-ABC-2025-000303','PRIMARY','2025-03-20','2030-03-19')
+    ON CONFLICT (user_id, policy_id) DO UPDATE SET
+        start_date = EXCLUDED.start_date,
+        end_date   = EXCLUDED.end_date;

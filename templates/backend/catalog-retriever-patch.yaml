@@ -355,6 +355,16 @@ data:
                 # Chunk the text
                 chunks, _ = self._create_text_chunks([text], verbose=verbose)
 
+                # Prepend the document header (title, policy holder, policy
+                # number block from the top of the document) to every chunk
+                # after the first. Identity queries ("what is my policy id?")
+                # then match any chunk of the document, and every retrieved
+                # chunk carries the identifiers the LLM needs to answer —
+                # ranking within the document no longer decides correctness.
+                if len(chunks) > 1:
+                    header = " ".join(text[:300].split())
+                    chunks = [chunks[0]] + [f"{header}\n[...]\n{c}" for c in chunks[1:]]
+
                 # Embed chunks
                 embeddings = self._embed_chunks_in_batches(chunks, query_type="passage", verbose=verbose)
 
